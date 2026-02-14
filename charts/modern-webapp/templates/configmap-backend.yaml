@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "modern-webapp.fullname" . }}-backend-code
+data:
+  main.py: |
+    from fastapi import FastAPI, Request
+    from fastapi.middleware.cors import CORSMiddleware
+    import os
+    import json
+
+    app = FastAPI()
+
+    # CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    @app.get("/api/health")
+    async def health():
+        return {"status": "ok"}
+
+    @app.get("/api/me")
+    async def read_current_user(request: Request):
+        # Identity headers from OAuth2 Proxy
+        email = request.headers.get("X-Auth-Request-Email", "Guest")
+        user = request.headers.get("X-Auth-Request-User", "Unknown")
+        groups = request.headers.get("X-Auth-Request-Groups", "")
+        
+        # Masked API key from environment
+        api_key_fragment = os.getenv("API_KEY", "NOT_SET")[:4] + "****"
+
+        return {
+            "email": email,
+            "username": user,
+            "groups": groups.split(",") if groups else [],
+            "api_key_preview": api_key_fragment,
+            "message": f"Welcome back, {user}!",
+            "is_admin": "admins" in groups
+        }

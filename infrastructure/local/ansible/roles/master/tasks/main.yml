@@ -1,0 +1,70 @@
+---
+- name: Check if cluster is already initialized
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: kube_admin_conf
+
+- name: Install Helm (tarball)
+  block:
+    - name: Download Helm
+      get_url:
+        url: https://get.helm.sh/helm-v3.14.0-linux-amd64.tar.gz
+        dest: /tmp/helm.tar.gz
+    
+    - name: Unarchive Helm
+      unarchive:
+        src: /tmp/helm.tar.gz
+        dest: /tmp
+        remote_src: yes
+    
+    - name: Install Helm binary
+      copy:
+        src: /tmp/linux-amd64/helm
+        dest: /usr/local/bin/helm
+        mode: '0755'
+        remote_src: yes
+  tags: helm
+
+- name: Initialize Kubernetes Master
+  command: >
+    kubeadm init
+    --pod-network-cidr={{ pod_network_cidr }}
+    --cri-socket=/var/run/crio/crio.sock
+  register: kubeadm_output
+  when: not kube_admin_conf.stat.exists
+
+- name: Create .kube directory
+  file:
+    path: "/root/.kube"
+    state: directory
+    mode: '0755'
+
+- name: Copy admin.conf to user's kube config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "/root/.kube/config"
+    remote_src: yes
+    owner: root
+    group: root
+
+- name: Fetch kubeconfig to local machine
+  fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ playbook_dir }}/../kube_config"
+    flat: yes
+
+- name: Generate join token
+  command: kubeadm token create --print-join-command
+  register: join_command_raw
+
+- name: Set join command fact
+  set_fact:
+    join_command: "{{ join_command_raw.stdout }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: Save join command to file (optional debug)
+  copy:
+    content: "{{ join_command }}"
+    dest: /root/join_command.sh
+    mode: '0700'

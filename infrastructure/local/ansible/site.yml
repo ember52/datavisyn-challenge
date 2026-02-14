@@ -1,0 +1,24 @@
+---
+- name: Setup NFS Server
+  hosts: nfs
+  become: true
+  roles:
+    - nfs
+
+- name: Setup Kubernetes Common Configuration
+  hosts: k8s_cluster
+  become: true
+  roles:
+    - common
+
+- name: Setup Kubernetes Master
+  hosts: master
+  become: true
+  roles:
+    - master
+
+- name: Join Workers to Cluster
+  hosts: workers
+  become: true
+  roles:
+    - worker

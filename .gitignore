@@ -1,0 +1,18 @@
+# Terraform
+infrastructure/terraform-eks/.terraform/
+infrastructure/terraform-eks/terraform.tfstate
+infrastructure/terraform-eks/terraform.tfstate.backup
+infrastructure/terraform-eks/errored.tfstate
+infrastructure/terraform-eks/plan.txt
+infrastructure/terraform-eks/plan_v2.txt
+infrastructure/terraform-eks/.terraform.lock.hcl
+
+# SOPS Age Key (NEVER commit this)
+key.txt
+
+# TLS Private Key (NEVER commit this)
+secrets/tls.key
+
+# OS
+.DS_Store
+Thumbs.db

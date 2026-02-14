@@ -1,0 +1,105 @@
+# values.yaml — Modern Webapp Helm Chart
+replicaCount: 1
+# Sensitive values (encrypted via SOPS)
+secrets:
+    apiKey: ENC[AES256_GCM,data:TRdfQMFM4eaApY0jbAHw/QSQp0D5Wo/posDG3pw=,iv:OSoN32bOqd63YgKnJjArBPVyyh27ePRUas6X+wafNgw=,tag:/t4Q/09lHrXh7ctq6FhdKA==,type:str]
+# Backend (FastAPI)
+backend:
+    image: python:3.11-slim
+    port: 8000
+    resources:
+        limits:
+            cpu: 200m
+            memory: 256Mi
+        requests:
+            cpu: 100m
+            memory: 128Mi
+# Frontend (NGINX)
+frontend:
+    image: nginx:alpine
+    port: 80
+    resources:
+        limits:
+            cpu: 100m
+            memory: 128Mi
+        requests:
+            cpu: 50m
+            memory: 64Mi
+# Ingress
+ingress:
+    enabled: true
+    className: nginx
+    hosts:
+        - host: webapp.ember-challenge.test
+          paths:
+            - path: /
+              pathType: Prefix
+    tls:
+        - hosts:
+            - webapp.ember-challenge.test
+          secretName: webapp-tls
+    annotations:
+        nginx.ingress.kubernetes.io/auth-url: http://modern-webapp-oauth2-proxy.apps.svc.cluster.local/oauth2/auth
+        nginx.ingress.kubernetes.io/auth-signin: https://webapp.ember-challenge.test/oauth2/start?rd=$escaped_request_uri
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/auth-response-headers: X-Auth-Request-Email,X-Auth-Request-User,X-Auth-Request-Groups
+        nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+# OAuth2 Proxy (subchart)
+oauth2-proxy:
+    enabled: true
+    config:
+        clientID: webapp-client
+        clientSecret: ENC[AES256_GCM,data:CqgPpkKadP0RmcpUKcf2LmsQ48umS/Mc8eeZ8x+R2aA=,iv:jJhNq8yQmFT2z9rMBdivFsndMiOsCGHoSbeo8CN/53g=,tag:5v2gEWxmCw+89JyK/V0DOg==,type:str]
+        cookieSecret: ENC[AES256_GCM,data:u3ocpsRllLNkGNfVqLdh6DeyZY3lyC1lI1Fi0GQfqFc=,iv:t/PIsdTdT7EK7fipQg9qemPFln6Bj2jj9El56+VDgb0=,tag:gbj2xbcTtjq2vHs6pLWxoA==,type:str]
+        configFile: |-
+            email_domains = [ "*" ]
+            upstreams = [ "http://modern-webapp-frontend.apps.svc.cluster.local:80" ]
+            cookie_domains = [ ".ember-challenge.test" ]
+            whitelist_domains = [ ".ember-challenge.test" ]
+            cookie_secure = true
+            ssl_insecure_skip_verify = true
+            insecure_oidc_allow_unverified_email = true
+    extraArgs:
+        provider: oidc
+        oidc-issuer-url: https://keycloak.ember-challenge.test/realms/datavisyn
+        ssl-insecure-skip-verify: "true"
+        insecure-oidc-allow-unverified-email: "true"
+        redirect-url: https://webapp.ember-challenge.test/oauth2/callback
+        set-xauthrequest: "true"
+    ingress:
+        enabled: true
+        className: nginx
+        path: /oauth2
+        annotations:
+            nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+        hosts:
+            - webapp.ember-challenge.test
+        tls:
+            - hosts:
+                - webapp.ember-challenge.test
+              secretName: webapp-tls
+    # Required when Keycloak is not resolvable via cluster DNS
+    hostAliases:
+        - ip: 172.20.247.226
+          hostnames:
+            - keycloak.ember-challenge.test
+sops:
+    kms: []
+    gcp_kms: []
+    azure_kv: []
+    hc_vault: []
+    age:
+        - recipient: age13gmgwduts0c4j6vkyqs2zlnsxc79xd28727qzvchh8uslfq4g9tsja2xr4
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAwbHZDOE84S1VUQ25SQUNy
+            eXRRZko4dUJ2bS9jdCtSK0ZrL2wrSjA0cVhBCmVybTA1SXRmem53SjBxQmd3N3Vn
+            bXhuenNEYk9aL0RhUjcybTVJUUNQbG8KLS0tIDR2TFdLWmZxMUpvbDJsL0R2aVZw
+            aEU2clNNS2U0ZGsrR2tWbGlPdi9oUkEKAWn+yJLkoECpdY2ooYv5gp0JSJPEcxPp
+            Wca2U1B2DM/uAJP1USL3dWGXEGnJGOp8Yu+DPOOEb2zgyEC6YQgTtg==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2026-02-14T21:26:38Z"
+    mac: ENC[AES256_GCM,data:vsI9S1u9aAv02o/e+9QQRHirawcKqakaBsWZeha0lYCo7qYtEaujyXPqED29LsdfnM2AOGEk4jCUutEzX7HPuQAIN3v5uMm6RxsjHJ09Py8dGGRIhi3zMSHq7Fwcxa4i1JocXOfmK/FzHk/k04nVYO9CGJE4pMaxH2k+0Z4sz1Y=,iv:NM2lA/rcK18kjjTO8onsVaW541X0dmXA+QEzTGyYFvc=,tag:Sac765oJ1cYiwJoZ6Q/Pvw==,type:str]
+    pgp: []
+    encrypted_regex: ^(apiKey|clientSecret|cookieSecret)$
+    version: 3.8.1

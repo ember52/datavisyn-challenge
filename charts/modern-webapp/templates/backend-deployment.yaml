@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "modern-webapp.fullname" . }}-backend
+  labels:
+    app: {{ include "modern-webapp.fullname" . }}
+    tier: backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "modern-webapp.fullname" . }}
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: {{ include "modern-webapp.fullname" . }}
+        tier: backend
+    spec:
+      initContainers:
+        - name: install-deps
+          image: {{ .Values.backend.image }}
+          command: ["pip", "install", "--target=/app/packages", "fastapi", "uvicorn", "standard-imghdr"]
+          volumeMounts:
+            - name: python-packages
+              mountPath: /app/packages
+      containers:
+        - name: backend
+          image: {{ .Values.backend.image }}
+          command: ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+          ports:
+            - containerPort: 8000
+          env:
+            - name: PYTHONPATH
+              value: "/app/packages"
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "modern-webapp.fullname" . }}-secrets
+                  key: apiKey
+          volumeMounts:
+            - name: code-volume
+              mountPath: /app
+            - name: python-packages
+              mountPath: /app/packages
+          workingDir: /app
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+      volumes:
+        - name: code-volume
+          configMap:
+            name: {{ include "modern-webapp.fullname" . }}-backend-code
+        - name: python-packages
+          emptyDir: {}

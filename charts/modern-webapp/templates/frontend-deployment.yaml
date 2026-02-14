@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "modern-webapp.fullname" . }}-frontend
+  labels:
+    app: {{ include "modern-webapp.fullname" . }}
+    tier: frontend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "modern-webapp.fullname" . }}
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: {{ include "modern-webapp.fullname" . }}
+        tier: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: {{ .Values.frontend.image }}
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html-volume
+              mountPath: /usr/share/nginx/html
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}
+      volumes:
+        - name: html-volume
+          configMap:
+            name: {{ include "modern-webapp.fullname" . }}-frontend-code

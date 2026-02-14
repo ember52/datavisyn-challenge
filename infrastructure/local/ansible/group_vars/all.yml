@@ -1,0 +1,7 @@
+---
+iso_path: "/dev/sr0"
+mount_point: "/mnt/rhel9"
+kubernetes_version: "v1.33"
+crio_version: "v1.33"
+pod_network_cidr: "192.168.0.0/16"
+nfs_export_path: "/srv/nfs/k8s"

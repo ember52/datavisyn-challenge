@@ -1,0 +1,3 @@
+---
+- name: Reload Exports
+  command: exportfs -ra
