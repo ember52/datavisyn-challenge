@@ -1,0 +1,52 @@
+graph TB
+    subgraph "User Machine"
+        USER["👤 User Browser"]
+    end
+
+    subgraph "RHEL9 Bare-Metal Cluster - kubeadm"
+        direction TB
+
+        subgraph "Networking Layer"
+            METALLB["MetalLB<br/>Load Balancer"]
+            INGRESS["NGINX Ingress Controller<br/>TLS Termination via Wildcard Cert"]
+        end
+
+        subgraph "Identity & GitOps Layer"
+            KC["Keycloak<br/>OIDC Provider"]
+            ARGO["ArgoCD<br/>GitOps CD"]
+        end
+
+        subgraph "Application Layer - apps namespace"
+            OAUTH["OAuth2 Proxy<br/>Auth Gate"]
+            FE["Frontend<br/>NGINX + Glassmorphism UI"]
+            BE["Backend<br/>FastAPI"]
+        end
+
+        subgraph "Storage Layer"
+            NFS["NFS Provisioner<br/>Dynamic PVs"]
+        end
+    end
+
+    subgraph "External"
+        GH["GitHub Repository"]
+    end
+
+    USER -->|"HTTPS"| METALLB
+    METALLB --> INGRESS
+    INGRESS -->|"/oauth2/*"| OAUTH
+    INGRESS -->|"/"| FE
+    INGRESS -->|"/api/*"| BE
+    OAUTH -->|"OIDC Auth"| KC
+    ARGO -->|"Sync Charts"| GH
+    ARGO -->|"Deploy"| FE
+    ARGO -->|"Deploy"| BE
+    ARGO -->|"Deploy"| OAUTH
+
+    style METALLB fill:#e67e22,color:#fff
+    style INGRESS fill:#3498db,color:#fff
+    style KC fill:#9b59b6,color:#fff
+    style ARGO fill:#e74c3c,color:#fff
+    style OAUTH fill:#1abc9c,color:#fff
+    style FE fill:#2ecc71,color:#fff
+    style BE fill:#2ecc71,color:#fff
+    style NFS fill:#95a5a6,color:#fff
