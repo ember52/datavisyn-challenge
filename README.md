@@ -29,17 +29,17 @@ A production-grade Kubernetes platform featuring **dual infrastructure** (local 
 
 ## Architecture Overview
 
-### Local Cluster Architecture
+### Cloud Architecture (AWS EKS)
 
-![Local cluster architecture diagram](docs/diagrams/local-architecture.png)
+![Professional Cloud Architecture Diagram](docs/diagrams/cloud_architecture_v2.png)
 
-### Cloud Cluster Architecture (AWS EKS)
+### Local Architecture (Bare-Metal)
 
-![Cloud EKS architecture diagram](docs/diagrams/cloud-architecture.png)
+![Professional Local Architecture Diagram](docs/diagrams/local_architecture_v2.png)
 
 ### Authentication Flow
 
-![Authentication sequence flow diagram](docs/diagrams/auth-flow.png)
+![Professional Authentication sequence flow diagram](docs/diagrams/auth_flow_v2.png)
 
 ---
 
@@ -447,7 +447,7 @@ Sensitive values in `charts/modern-webapp/values.yaml` are encrypted using **SOP
 
 **Encrypted fields:** `apiKey`, `clientSecret`, `cookieSecret`
 
-![SOPS encryption flow diagram](docs/diagrams/sops-flow.png)
+![Professional SOPS encryption flow diagram](docs/diagrams/sops_flow_v2.png)
 
 **How it works:**
 
@@ -489,7 +489,7 @@ The application consists of two services deployed as a single Helm chart:
 | **Backend** | `python:3.11-slim` | FastAPI app serving `/api/me` (identity endpoint)  |
 | **Frontend**| `nginx:alpine`    | Static files (HTML/CSS/JS) with glassmorphism UI   |
 
-![Helm chart internal architecture diagram](docs/diagrams/chart-architecture.png)
+![Helm chart internal architecture diagram](docs/diagrams/chart_architecture_v2.png)
 
 The **init container** installs Python dependencies (`fastapi`, `uvicorn`) into a shared `emptyDir` volume, which the backend container then references via `PYTHONPATH`. The source code for both backend and frontend is stored in **ConfigMaps**, making the entire application deployable without building custom Docker images.
 
@@ -557,7 +557,7 @@ ArgoCD will:
 
 ## Deployment Order (Summary)
 
-![Deployment order flowchart](docs/diagrams/deployment-order.png)
+![Professional Deployment order flowchart](docs/diagrams/deployment_order_v2.png)
 
 | Step | Action | Command |
 |------|--------|---------|
